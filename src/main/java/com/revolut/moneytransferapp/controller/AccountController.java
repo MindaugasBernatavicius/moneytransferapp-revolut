@@ -11,7 +11,10 @@ import spark.Response;
 import spark.Route;
 
 import java.math.BigDecimal;
+import java.net.URLDecoder;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class AccountController {
 
@@ -27,9 +30,16 @@ public class AccountController {
                     .getAccounts(), new TypeToken<List<Account>>(){}.getType());
 
     public Route getAccount =
-            (Request request, Response response)
-                    -> new Gson().toJson(accountService
-                    .getAccountById(Integer.parseInt(request.params("id"))));
+            (Request request, Response response) -> {
+                Account account = null;
+                try {
+                    account = accountService.getAccountById(Integer.parseInt(request.params("id")));
+                    response.status(200);
+                } catch (AccountNotFoundException e){
+                    response.status(404); // account was not found
+                }
+                return new Gson().toJson(account);
+            };
 
     public Route createAccount =
             (Request request, Response response)
@@ -37,28 +47,38 @@ public class AccountController {
 
     public Route updateAccount =
             (Request request, Response response) -> {
-                    Account account = new Gson().fromJson(request.body(), Account.class);
-                    try {
-                        accountService.updateAccount(Integer.parseInt(request.params("id")), account);
-                        response.status(200); // updated successfully
-                    } catch(AccountNotFoundException e) {
-                        response.status(404); // account was not found
-                    };
-                    return "";
+                Account account = new Gson().fromJson(request.body(), Account.class);
+                try {
+                    accountService.updateAccount(Integer.parseInt(request.params("id")), account);
+                    response.status(200); // updated successfully
+                } catch(AccountNotFoundException e) {
+                    response.status(404); // account was not found
+                };
+                return "";
             };
 
     public Route transferMoney =
             (Request request, Response response) -> {
-                int benefactorId = Integer.parseInt(request.params(request.params("benefactorId")));
-                int beneficiaryId = Integer.parseInt(request.params(request.params("beneficiaryId")));
-                BigDecimal amount = new BigDecimal(request.params("beneficiaryId"));
-                try {
-                    accountService.transferMoney(benefactorId, beneficiaryId, amount);
-                    response.status(200); // updated successfully
-                } catch (InvalidTransferException e){
-                    response.status(400); // account was not found
-                    return "Failure, insuficient funds in benefactor account";
+                int benefactorId = Integer.parseInt(request.params("benefactorId"));
+                int beneficiaryId = Integer.parseInt(request.params("beneficiaryId"));
+                Matcher matcher = Pattern.compile("\\{\"transferAmount\":\"(.*)\"\\}")
+                        .matcher(URLDecoder.decode(request.body(), "UTF-8"));
+                if(matcher.find()){
+                    BigDecimal amount = new BigDecimal(matcher.group(1));
+                    try {
+                        accountService.transferMoney(benefactorId, beneficiaryId, amount);
+                        response.status(200); // updated successfully
+                        return "Success";
+                    } catch (InvalidTransferException e){
+                        response.status(400); //
+                        return "Failure, insufficient funds in benefactor account";
+                    } catch (AccountNotFoundException e) {
+                        response.status(404); // account was not found
+                        return "Failure, insufficient funds in benefactor account";
+                    }
+                } else {
+                    response.status(400);
+                    return "Failure";
                 }
-                return "Success";
-    };
+            };
 }

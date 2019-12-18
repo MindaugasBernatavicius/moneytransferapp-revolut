@@ -6,7 +6,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,9 +15,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-public class AppPerformancePerformanceTest {
+public class AppIntegrationConcurrentTest {
 
     private static final String URL = "http://localhost:4567";
+    private static final RequestUtil req = new RequestUtil();
+
+    @BeforeAll
+    static void arrangeForAll(){
+        req.setBaseURL(URL);
+    }
 
     @BeforeEach
     void arrange(){
@@ -36,8 +41,10 @@ public class AppPerformancePerformanceTest {
             throws ExecutionException, InterruptedException {
         // given
         ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<InputStream> response1 = executor.submit(() -> new URL(URL + "/accounts").openStream());
-        Future<InputStream> response2 = executor.submit(() -> new URL(URL + "/accounts").openStream());
+        Future<InputStream> response1 = executor.submit(() ->
+                new URL(URL + "/accounts").openStream());
+        Future<InputStream> response2 = executor.submit(() ->
+                new URL(URL + "/accounts").openStream());
 
         // when
         String resp1 = new BufferedReader(new InputStreamReader(response1.get()))
@@ -54,25 +61,29 @@ public class AppPerformancePerformanceTest {
     public void transaction__givenFixedAccountAmount__concurrentTransfersDontOverdraw()
             throws ExecutionException, InterruptedException, IOException {
         // given
-        int degreeOfParallelism = 12;
+        int degreeOfParallelism = Runtime.getRuntime().availableProcessors() * 3;
         ExecutorService executor = Executors.newFixedThreadPool(degreeOfParallelism);
         List<Future<InputStream>> responses = new ArrayList<>();
 
         // when
         for (int i = 0; i < degreeOfParallelism; i++)
-            responses.add(executor.submit(() -> makeReq("/accounts", "POST")));
+            responses.add(executor.submit(() ->
+                    req.makeReq("/accounts", "POST", null)
+                            .getResponseBodyStream()));
         executor.shutdown();
 
         // then
         for (int i = 0; i < responses.size(); i++){
             // forcing the wait for all threads to complate,
-            // ... CountDownLatch could be used instread
+            // ... CountDownLatch could be used instead
             responses.get(i).get();
         }
 
-        String res = new BufferedReader(new InputStreamReader(
-                makeReq("/accounts", "GET")))
-                    .lines().collect(Collectors.joining(""));
+//        String res = new BufferedReader(new InputStreamReader(
+//                req.makeReq("/accounts", "GET", null)
+//                        .getResponseBodyStream())).lines().collect(Collectors.joining(""));
+
+        String res = req.makeReq("/accounts", "GET", null).getResponseBody();
 
         String expectedResponse = "[" +
                 "{\"id\":0,\"balance\":0.01},{\"id\":1,\"balance\":1.01},{\"id\":2,\"balance\":2.01}," +
@@ -86,20 +97,5 @@ public class AppPerformancePerformanceTest {
 
         // teardown
         teardown();
-    }
-
-    public InputStream makeReq(String urlPostfix, String reqMethod){
-        URL url = null;
-        HttpURLConnection conn = null;
-        InputStream is = null;
-        try {
-            url = new URL(URL + urlPostfix);
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod(reqMethod);
-            is = conn.getInputStream();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return is;
     }
 }

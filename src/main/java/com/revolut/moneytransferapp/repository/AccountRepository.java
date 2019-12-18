@@ -16,14 +16,7 @@ public class AccountRepository {
             add(new Account(1, new BigDecimal("1.01")));
             add(new Account(2, new BigDecimal("2.01")));
         }};
-
         accountCount = accounts.size();
-    }
-
-    public int save(Account account){
-        account.setId(accounts.size());
-        accounts.add(account);
-        return ++accountCount;
     }
 
     public List<Account> getAccounts() {
@@ -44,5 +37,11 @@ public class AccountRepository {
 
     public int getAccountCount() {
         return accountCount;
+    }
+
+    public int save(Account account){
+        account.setId(accounts.size());
+        accounts.add(account);
+        return ++accountCount;
     }
 }

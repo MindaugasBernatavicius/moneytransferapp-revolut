@@ -17,6 +17,7 @@ public class App {
         app.setupSparkConfig();
         app.setupDependencies();
         app.setupRoutes();
+        awaitInitialization();
     }
 
     public static void stopService(){
@@ -39,6 +40,7 @@ public class App {
         post("/accounts", accountController.createAccount);
         get("/accounts", accountController.getAllAccounts);
         get("/accounts/:id", accountController.getAccount);
-        put("/accounts/:id",accountController.updateAccount);
+        put("/accounts/:id", accountController.updateAccount);
+        post("/accounts/:benefactorId/transfers/:beneficiaryId", accountController.transferMoney);
     }
 }

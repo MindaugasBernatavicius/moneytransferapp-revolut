@@ -20,11 +20,13 @@ public class AccountService {
         return accountRepository.getAccounts();
     }
 
-    public Account getAccountById(int id) {
-        return accountRepository.getAccountById(id);
+    public Account getAccountById(int id) throws AccountNotFoundException {
+        Account account = accountRepository.getAccountById(id);
+        if (account == null) throw new AccountNotFoundException();
+        return account;
     }
 
-    public synchronized long createAccount(){
+    public synchronized int createAccount(){
         Account account = new Account(new BigDecimal("0.0"));
         return accountRepository.save(account);
     }
@@ -35,22 +37,20 @@ public class AccountService {
         if (accountRepository.getAccountCount() < accountId)
             throw new AccountNotFoundException();
 
-        Account account = accountRepository.getAccountById(accountId);
-        if (account == null)
-            throw new AccountNotFoundException();
-        else
-            account.setBalance(updateObject.getBalance());
+        Account account = getAccountById(accountId);
+        account.setBalance(updateObject.getBalance());
     }
 
-    public void transferMoney(int benefactorId, int beneficiaryId, BigDecimal amountToTransfer) throws InvalidTransferException {
-        Account benefactorAccount = accountRepository.getAccountById(benefactorId);
-        BigDecimal benefactorBalance = accountRepository.getAccountById(benefactorId).getBalance();
-        BigDecimal beneficiaryBalance = accountRepository.getAccountById(benefactorId).getBalance();
+    public void transferMoney(int benefactorId, int beneficiaryId, BigDecimal amountToTransfer)
+            throws InvalidTransferException, AccountNotFoundException {
+
+        Account benefactorAccount = getAccountById(benefactorId);
+        Account beneficiaryAccount = getAccountById(beneficiaryId);
+        BigDecimal benefactorBalance = benefactorAccount.getBalance();
+        BigDecimal beneficiaryBalance = beneficiaryAccount.getBalance();
+        //  check if transfer is possible
         if(benefactorBalance.subtract(amountToTransfer).compareTo(BigDecimal.ZERO) <= 0)
             throw new InvalidTransferException();
-
-        Account beneficiaryAccount = accountRepository.getAccountById(beneficiaryId);
-
         // transfer
         benefactorAccount.setBalance(benefactorBalance.subtract(amountToTransfer));
         beneficiaryAccount.setBalance(beneficiaryBalance.add(amountToTransfer));
