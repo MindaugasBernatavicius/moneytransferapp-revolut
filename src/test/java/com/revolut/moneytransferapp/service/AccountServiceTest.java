@@ -82,7 +82,7 @@ public class AccountServiceTest {
     @Test
     public void createAccount__whenCalled__thenCreatesAccountReturnsId(){
         // given
-        int accId1 = 1; BigDecimal balance1 = new BigDecimal("1.01");
+        int accId1 = 0; BigDecimal balance1 = new BigDecimal("1.01");
         List<Account> accountsIn =  new ArrayList<Account>(){{
             add(new Account(accId1, balance1)); }};
         accountRepository.setAccounts(accountsIn);
@@ -91,18 +91,18 @@ public class AccountServiceTest {
         int createdAccountId = accountService.createAccount();
 
         // then
-        assertEquals(2, createdAccountId);
+        assertEquals(1, createdAccountId);
     }
 
     @Test
-    public void updateAccount__whenNoAccountsPresent__throwsException(){
+    public void updateAccount__whenCalledWithNonExistentAccId__throwsException(){
         // given
         int accId = 1; BigDecimal balance = new BigDecimal(1);
         Account account = new Account(accId, balance);
 
         // when / then
-        assertThrows(AccountNotFoundException.class,
-                () -> accountService.updateAccount(accId, account));
+        assertThrows(AccountNotFoundException.class, ()
+                -> accountService.updateAccount(account));
     }
 
     @Test
@@ -117,7 +117,7 @@ public class AccountServiceTest {
         // when
         BigDecimal updatedBalance = new BigDecimal("5");
         Account updatedAccount = new Account(accId, updatedBalance);
-        accountService.updateAccount(accId, updatedAccount);
+        accountService.updateAccount(updatedAccount);
 
         // then
         BigDecimal actualBalance = accountService.getAccountById(accId).getBalance();

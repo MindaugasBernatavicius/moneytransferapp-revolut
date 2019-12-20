@@ -47,14 +47,23 @@ public class AccountController {
 
     public Route updateAccount =
             (Request request, Response response) -> {
-                Account account = new Gson().fromJson(request.body(), Account.class);
-                try {
-                    accountService.updateAccount(Integer.parseInt(request.params("id")), account);
-                    response.status(200); // updated successfully
-                } catch(AccountNotFoundException e) {
-                    response.status(404); // account was not found
-                };
-                return "";
+                String decodedBody = URLDecoder.decode(request.body(), "UTF-8");
+                Account updateObject = new Gson().fromJson(decodedBody, Account.class);
+                updateObject.setId(Integer.parseInt(request.params("id")));
+                // TODO :: create a validator for Account
+                if(updateObject.getBalance() == null) {
+                    response.status(422);
+                    return "Incorrect body info";
+                } else {
+                    try {
+                        accountService.updateAccount(updateObject);
+                        response.status(200); // updated successfully
+                        return "Success";
+                    } catch(AccountNotFoundException e) {
+                        response.status(404); // account was not found
+                        return "Account not found";
+                    }
+                }
             };
 
     public Route transferMoney =

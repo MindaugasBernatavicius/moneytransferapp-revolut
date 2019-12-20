@@ -39,9 +39,19 @@ public class AccountRepository {
         return accountCount;
     }
 
-    public int save(Account account){
-        account.setId(accounts.size());
+    public int saveAccount(Account account){
+        int id = accounts.size();
+        account.setId(id);
         accounts.add(account);
-        return ++accountCount;
+        ++accountCount;
+        return id;
+    }
+
+    public void updateAccount(Account account){
+        for (int i = 0; i < accounts.size(); i++){
+            Account tmpAcc = accounts.get(i);
+            if(tmpAcc.getId().equals(account.getId()))
+                tmpAcc.setBalance(account.getBalance());
+        }
     }
 }

@@ -40,4 +40,13 @@ public class Response {
             return !response.equals("null") ? response : "";
         }
     }
+
+    @Override
+    public String toString() {
+        return "Response{" +
+                "responseCode=" + responseCode +
+                ", headers=" + headers +
+                ", responseBodyStream=" + responseBodyStream +
+                '}';
+    }
 }

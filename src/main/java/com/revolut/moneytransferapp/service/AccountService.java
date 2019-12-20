@@ -28,20 +28,17 @@ public class AccountService {
 
     public synchronized int createAccount(){
         Account account = new Account(new BigDecimal("0.0"));
-        return accountRepository.save(account);
+        return accountRepository.saveAccount(account);
     }
 
-    public void updateAccount(int accountId, Account updateObject) throws AccountNotFoundException {
-        // TODO :: possibly move, because this is specific to the List backed implementation of repo
-        // if another annother implementation would be used this would not need to be here
-        if (accountRepository.getAccountCount() < accountId)
+    public synchronized void updateAccount(Account updateObject) throws AccountNotFoundException {
+        Integer id = updateObject.getId();
+        if(getAccountById(id) == null)
             throw new AccountNotFoundException();
-
-        Account account = getAccountById(accountId);
-        account.setBalance(updateObject.getBalance());
+        accountRepository.updateAccount(updateObject);
     }
 
-    public void transferMoney(int benefactorId, int beneficiaryId, BigDecimal amountToTransfer)
+    public synchronized void transferMoney(int benefactorId, int beneficiaryId, BigDecimal amountToTransfer)
             throws InvalidTransferException, AccountNotFoundException {
 
         Account benefactorAccount = getAccountById(benefactorId);

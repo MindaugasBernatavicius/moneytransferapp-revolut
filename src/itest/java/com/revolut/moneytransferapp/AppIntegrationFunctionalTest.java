@@ -1,9 +1,13 @@
 package com.revolut.moneytransferapp;
 
+import com.google.gson.Gson;
+import com.revolut.moneytransferapp.model.Account;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -66,6 +70,56 @@ public class AppIntegrationFunctionalTest {
         // then
         assertEquals(404, resp.getResponseCode());
         assertEquals("", resp.getResponseBody());
+    }
+
+    @Test
+    public void createAccount__whenCalled__createsAccountReturnsId(){
+        // given / when
+        Response resp = req.makeReq("/accounts", "POST");
+
+        // then
+        assertEquals(200, resp.getResponseCode());
+        assertEquals("3", resp.getResponseBody());
+    }
+
+    @Test
+    public void updateAccount__whenExistingAccountIsBeingModified__thenModificationIsSuccessful(){
+        // given
+        Response createNewAccResp = req.makeReq("/accounts", "POST");
+        int createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
+        Response createdAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
+        Account updateObject = new Gson().fromJson(createdAccInfo.getResponseBody(), Account.class);
+        BigDecimal createdAccountBalance = updateObject.getBalance();
+
+        // when
+        String requestBody = "{\"balance\":\"" + createdAccountBalance.add(new BigDecimal("1")) + "\"}";
+        Response resp = req.makeReq("/accounts/" + createdAccountsID, "PUT", requestBody);
+
+        // then
+        Response updatedAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
+        Account updatedAccount = new Gson().fromJson(updatedAccInfo.getResponseBody(), Account.class);
+        BigDecimal updatedAccountBalance = updatedAccount.getBalance();
+        assertEquals(200, resp.getResponseCode());
+        assertEquals(createdAccountBalance.add(new BigDecimal("1")), updatedAccountBalance);
+    }
+
+    @Test
+    public void updateAccount__whenNonExistingAccountIsBeingModified__then404returned(){
+        // given
+        Response createNewAccResp = req.makeReq("/accounts", "POST");
+        int createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
+        int nonExistingAccount = createdAccountsID + 5000;
+        Response createdAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
+        Account updateObject = new Gson().fromJson(createdAccInfo.getResponseBody(), Account.class);
+        BigDecimal createdAccountBalance = updateObject.getBalance();
+
+        // when
+        String requestBody = "{\"balance\":\"" + createdAccountBalance.add(new BigDecimal("1")) + "\"}";
+        Response resp = req.makeReq("/accounts/" + nonExistingAccount, "PUT", requestBody);
+
+        // then
+        assertEquals(404, resp.getResponseCode());
+        assertEquals("Account not found", resp.getResponseBody());
     }
 
     @Test

@@ -1,19 +1,22 @@
 package com.revolut.moneytransferapp;
 
-import org.junit.jupiter.api.*;
+import com.google.gson.Gson;
+import com.revolut.moneytransferapp.model.Account;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AppIntegrationConcurrentTest {
 
@@ -35,31 +38,9 @@ public class AppIntegrationConcurrentTest {
         App.stopService();
     }
 
-    @Test
-    @Disabled
-    public void createAccount__given2ParallelRequests__duplicateAccountNotCreated()
-            throws ExecutionException, InterruptedException {
-        // given
-        ExecutorService executor = Executors.newFixedThreadPool(2);
-        Future<InputStream> response1 = executor.submit(() ->
-                new URL(URL + "/accounts").openStream());
-        Future<InputStream> response2 = executor.submit(() ->
-                new URL(URL + "/accounts").openStream());
-
-        // when
-        String resp1 = new BufferedReader(new InputStreamReader(response1.get()))
-                .lines().collect(Collectors.joining(""));
-        String resp2 = new BufferedReader(new InputStreamReader(response2.get()))
-                .lines().collect(Collectors.joining(""));
-        executor.shutdown();
-
-        // then
-        System.out.println("R1: " + resp1 + "\n" + "R2: " + resp2 );
-    }
-
     @RepeatedTest(10)
-    public void transaction__givenFixedAccountAmount__concurrentTransfersDontOverdraw()
-            throws ExecutionException, InterruptedException, IOException {
+    public void createAccount__givenParallelRequests__duplicateAccountNotCreated()
+            throws ExecutionException, InterruptedException {
         // given
         int degreeOfParallelism = Runtime.getRuntime().availableProcessors() * 3;
         ExecutorService executor = Executors.newFixedThreadPool(degreeOfParallelism);
@@ -67,25 +48,22 @@ public class AppIntegrationConcurrentTest {
 
         // when
         for (int i = 0; i < degreeOfParallelism; i++)
-            responses.add(executor.submit(() ->
-                    req.makeReq("/accounts", "POST", null)
-                            .getResponseBodyStream()));
+            responses.add(executor.submit(() -> req
+                    .makeReq("/accounts", "POST")
+                    .getResponseBodyStream()));
         executor.shutdown();
 
-        // then
-        for (int i = 0; i < responses.size(); i++){
-            // forcing the wait for all threads to complate,
-            // ... CountDownLatch could be used instead
+        for (int i = 0; i < responses.size(); i++)
+            // forcing wait for threads to complete
+            // CountDownLatch could be used instead
             responses.get(i).get();
-        }
 
-//        String res = new BufferedReader(new InputStreamReader(
-//                req.makeReq("/accounts", "GET", null)
-//                        .getResponseBodyStream())).lines().collect(Collectors.joining(""));
+        Response actualResponse = req.makeReq("/accounts", "GET");
+        int actualResponseCode = actualResponse.getResponseCode();
+        String actualResponseBody = actualResponse.getResponseBody();
 
-        String res = req.makeReq("/accounts", "GET", null).getResponseBody();
-
-        String expectedResponse = "[" +
+        // then
+        String expectedResponseBody = "[" +
                 "{\"id\":0,\"balance\":0.01},{\"id\":1,\"balance\":1.01},{\"id\":2,\"balance\":2.01}," +
                 "{\"id\":3,\"balance\":0.0},{\"id\":4,\"balance\":0.0},{\"id\":5,\"balance\":0.0}," +
                 "{\"id\":6,\"balance\":0.0},{\"id\":7,\"balance\":0.0},{\"id\":8,\"balance\":0.0}," +
@@ -93,9 +71,59 @@ public class AppIntegrationConcurrentTest {
                 "{\"id\":12,\"balance\":0.0},{\"id\":13,\"balance\":0.0},{\"id\":14,\"balance\":0.0}" +
             "]";
 
-        Assertions.assertEquals(expectedResponse, res);
+        assertEquals(200, actualResponseCode);
+        assertEquals(expectedResponseBody, actualResponseBody);
+    }
 
-        // teardown
-        teardown();
+    @RepeatedTest(10)
+    public void transaction__givenFixedAccountAmount__concurrentTransfersDrawFromAccountCorrectly()
+            throws ExecutionException, InterruptedException {
+
+        // given - constructing the threadpool
+        int degreeOfParallelism = Runtime.getRuntime().availableProcessors() * 3;
+        ExecutorService executor = Executors.newFixedThreadPool(degreeOfParallelism);
+        List<Future<InputStream>> responses = new ArrayList<>();
+
+        // given - preparing the account to have enought money for all parallel transfers
+        int benefactorAccId = 1; int beneficieryAccId = 2;
+        String requestBody = "{\"balance\":\"" + new BigDecimal("100") + "\"}";
+        Response resp = req.makeReq("/accounts/" + benefactorAccId, "PUT", requestBody);
+
+        // given - get the initial blance for both accounts before staring the threads
+        Response benefactorResponseBefore = req.makeReq("/accounts/" + benefactorAccId, "GET");
+        Account benefactorBefore = new Gson().fromJson(benefactorResponseBefore.getResponseBody(), Account.class);
+        BigDecimal benefactorBalanceBefore = benefactorBefore.getBalance();
+
+        Response beneficiaryResponseBefore = req.makeReq("/accounts/" + beneficieryAccId, "GET");
+        Account beneficiaryBefore = new Gson().fromJson(beneficiaryResponseBefore.getResponseBody(), Account.class);
+        BigDecimal beneficiaryBalanceBefore = beneficiaryBefore.getBalance();
+
+        // when
+        for (int i = 0; i < degreeOfParallelism; i++){
+            String reqUrl = "/accounts/" + benefactorAccId + "/transfers/" + beneficieryAccId;
+            String reqBody = "{\"transferAmount\":\"" + 1 + "\"}";
+            responses.add(executor.submit(() -> req.makeReq(reqUrl, "POST", reqBody).getResponseBodyStream()));
+        }
+        executor.shutdown();
+
+        for (int i = 0; i < responses.size(); i++)
+            responses.get(i).get();
+
+        Response benefactorResponseAfter = req.makeReq("/accounts/" + benefactorAccId, "GET");
+        Account benefactorAfter = new Gson().fromJson(benefactorResponseAfter.getResponseBody(), Account.class);
+        BigDecimal benefactorBalanceAfter = benefactorAfter.getBalance();
+
+        Response beneficiaryResponseAfter = req.makeReq("/accounts/" + beneficieryAccId, "GET");
+        Account beneficiaryAfter = new Gson().fromJson(beneficiaryResponseAfter.getResponseBody(), Account.class);
+        BigDecimal beneficiaryBalanceAfter = beneficiaryAfter.getBalance();
+
+        // then
+        BigDecimal expectedBenefactorBalance = benefactorBalanceBefore
+                .subtract(new BigDecimal(Integer.toString(degreeOfParallelism)));
+        assertEquals(expectedBenefactorBalance, benefactorBalanceAfter);
+
+        BigDecimal expectedBeneficiaryBalance = beneficiaryBalanceBefore
+                .add(new BigDecimal(Integer.toString(degreeOfParallelism)));
+        assertEquals(expectedBeneficiaryBalance, beneficiaryBalanceAfter);
     }
 }
