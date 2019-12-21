@@ -31,14 +31,15 @@ public class AccountController {
 
     public Route getAccount =
             (Request request, Response response) -> {
-                Account account = null;
+                int accountId = Integer.parseInt(request.params("id"));
                 try {
-                    account = accountService.getAccountById(Integer.parseInt(request.params("id")));
+                    Account account = accountService.getAccountById(accountId);
                     response.status(200);
+                    return new Gson().toJson(account);
                 } catch (AccountNotFoundException e){
-                    response.status(404); // account was not found
+                    response.status(404); // account not found
+                    return "Account not found";
                 }
-                return new Gson().toJson(account);
             };
 
     public Route createAccount =
@@ -83,7 +84,7 @@ public class AccountController {
                         return "Failure, insufficient funds in benefactor account";
                     } catch (AccountNotFoundException e) {
                         response.status(404); // account was not found
-                        return "Failure, insufficient funds in benefactor account";
+                        return "Failure, account not found";
                     }
                 } else {
                     response.status(400);

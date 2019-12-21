@@ -121,8 +121,4 @@ public class AccountRepositoryTest {
         // then
         assertEquals(accountIn.getBalance(), balance1);
     }
-
-    // TODO :: transfer money tests
-
-
 }

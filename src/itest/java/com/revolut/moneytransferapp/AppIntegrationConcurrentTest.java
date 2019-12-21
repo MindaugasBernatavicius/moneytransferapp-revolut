@@ -42,7 +42,15 @@ public class AppIntegrationConcurrentTest {
     public void createAccount__givenParallelRequests__duplicateAccountNotCreated()
             throws ExecutionException, InterruptedException {
         // given
-        int degreeOfParallelism = Runtime.getRuntime().availableProcessors() * 3;
+
+        // ... Hardcoding the degree or parallelism for now due to the fact that
+        // ... if different machines are to be used the test would break. This is due
+        // ... to the fact that the expected response is fully precomputed. An approach
+        // ... to fix this would be to extract the ids from GET /accounts response and
+        // ... check if they are sequential (no skips, no duplicates).
+
+        // int degreeOfParallelism = Runtime.getRuntime().availableProcessors() * 3;
+        int degreeOfParallelism = 24;
         ExecutorService executor = Executors.newFixedThreadPool(degreeOfParallelism);
         List<Future<InputStream>> responses = new ArrayList<>();
 
@@ -58,18 +66,20 @@ public class AppIntegrationConcurrentTest {
             // CountDownLatch could be used instead
             responses.get(i).get();
 
+        // then
         Response actualResponse = req.makeReq("/accounts", "GET");
         int actualResponseCode = actualResponse.getResponseCode();
         String actualResponseBody = actualResponse.getResponseBody();
-
-        // then
         String expectedResponseBody = "[" +
                 "{\"id\":0,\"balance\":0.01},{\"id\":1,\"balance\":1.01},{\"id\":2,\"balance\":2.01}," +
-                "{\"id\":3,\"balance\":0.0},{\"id\":4,\"balance\":0.0},{\"id\":5,\"balance\":0.0}," +
-                "{\"id\":6,\"balance\":0.0},{\"id\":7,\"balance\":0.0},{\"id\":8,\"balance\":0.0}," +
+                "{\"id\":3,\"balance\":0.0},{\"id\":4,\"balance\":0.0},{\"id\":5,\"balance\":0.0}" +
+                ",{\"id\":6,\"balance\":0.0},{\"id\":7,\"balance\":0.0},{\"id\":8,\"balance\":0.0}," +
                 "{\"id\":9,\"balance\":0.0},{\"id\":10,\"balance\":0.0},{\"id\":11,\"balance\":0.0}," +
-                "{\"id\":12,\"balance\":0.0},{\"id\":13,\"balance\":0.0},{\"id\":14,\"balance\":0.0}" +
-            "]";
+                "{\"id\":12,\"balance\":0.0},{\"id\":13,\"balance\":0.0},{\"id\":14,\"balance\":0.0}," +
+                "{\"id\":15,\"balance\":0.0},{\"id\":16,\"balance\":0.0},{\"id\":17,\"balance\":0.0}," +
+                "{\"id\":18,\"balance\":0.0},{\"id\":19,\"balance\":0.0},{\"id\":20,\"balance\":0.0}," +
+                "{\"id\":21,\"balance\":0.0},{\"id\":22,\"balance\":0.0},{\"id\":23,\"balance\":0.0}," +
+                "{\"id\":24,\"balance\":0.0},{\"id\":25,\"balance\":0.0},{\"id\":26,\"balance\":0.0}]";
 
         assertEquals(200, actualResponseCode);
         assertEquals(expectedResponseBody, actualResponseBody);

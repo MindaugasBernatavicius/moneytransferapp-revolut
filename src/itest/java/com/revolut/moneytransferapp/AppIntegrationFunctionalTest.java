@@ -32,10 +32,9 @@ public class AppIntegrationFunctionalTest {
     }
 
     @Test
-    public void getAccount__givenNoParameters__returnsAllAccounts(){
+    public void getAccounts__givenNoParameters__returnsAllAccounts(){
         // given / when
         Response resp = req.makeReq("/accounts", "GET");
-
         // then
         String expectedResponse = "[" +
                 "{\"id\":0,\"balance\":0.01}," +
@@ -46,13 +45,11 @@ public class AppIntegrationFunctionalTest {
     }
 
     @Test
-    public void getAccount__givenExistingAccountId__returnsCorrespondingAccount(){
+    public void getAccounts__givenExistingAccountId__returnsCorrespondingAccount(){
         // given
         int accountId = 1;
-
         // when
         Response resp = req.makeReq("/accounts/" + accountId, "GET");
-
         // then
         String expectedResponse = "{\"id\":1,\"balance\":1.01}";
         assertEquals(200, resp.getResponseCode());
@@ -60,30 +57,27 @@ public class AppIntegrationFunctionalTest {
     }
 
     @Test
-    public void getAccount__givenNonExistingAccountId__returns404(){
+    public void getAccounts__givenNonExistingAccountId__returns404(){
         // given
         int accountId = 50;
-
         // when
         Response resp = req.makeReq("/accounts/" + accountId, "GET");
-
         // then
         assertEquals(404, resp.getResponseCode());
-        assertEquals("", resp.getResponseBody());
+        assertEquals("Account not found", resp.getResponseBody());
     }
 
     @Test
-    public void createAccount__whenCalled__createsAccountReturnsId(){
+    public void postCreateAccount__whenCalled__createsAccountReturnsItsId(){
         // given / when
         Response resp = req.makeReq("/accounts", "POST");
-
         // then
         assertEquals(200, resp.getResponseCode());
         assertEquals("3", resp.getResponseBody());
     }
 
     @Test
-    public void updateAccount__whenExistingAccountIsBeingModified__thenModificationIsSuccessful(){
+    public void putUpdateAccount__whenExistingAccountIsBeingModified__thenReturns200BalancesIsIncreased(){
         // given
         Response createNewAccResp = req.makeReq("/accounts", "POST");
         int createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
@@ -104,7 +98,7 @@ public class AppIntegrationFunctionalTest {
     }
 
     @Test
-    public void updateAccount__whenNonExistingAccountIsBeingModified__then404returned(){
+    public void putUpdateAccount__whenNonExistingAccountIsBeingModified__then404returned(){
         // given
         Response createNewAccResp = req.makeReq("/accounts", "POST");
         int createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
@@ -153,5 +147,39 @@ public class AppIntegrationFunctionalTest {
         String expectedResponseBody = "Failure, insufficient funds in benefactor account";
         assertEquals(400, response1.getResponseCode());
         assertEquals(expectedResponseBody, response1.getResponseBody());
+    }
+
+    @Test
+    public void postAccountTransfer__givenNonExistingBeneficiaryAccount__returns404AndFailure(){
+        // given
+        String amountToTransfer = "0.99";
+        int accountFrom = 1;
+        int accountTo = 50;
+        String ulrPostfix = "/accounts/" + accountFrom + "/transfers/" + accountTo;
+        String requestBody = "{\"transferAmount\":\"" + amountToTransfer + "\"}";
+
+        // when
+        Response response1 = req.makeReq(ulrPostfix, "POST", requestBody);
+
+        // then
+        assertEquals(404, response1.getResponseCode());
+        assertEquals("Failure, account not found", response1.getResponseBody());
+    }
+
+    @Test
+    public void postAccountTransfer__givenNonExistingBenefactorAccount__returns404AndFailure(){
+        // given
+        String amountToTransfer = "0.99";
+        int accountFrom = 50;
+        int accountTo = 2;
+        String ulrPostfix = "/accounts/" + accountFrom + "/transfers/" + accountTo;
+        String requestBody = "{\"transferAmount\":\"" + amountToTransfer + "\"}";
+
+        // when
+        Response response1 = req.makeReq(ulrPostfix, "POST", requestBody);
+
+        // then
+        assertEquals(404, response1.getResponseCode());
+        assertEquals("Failure, account not found", response1.getResponseBody());
     }
 }

@@ -124,7 +124,6 @@ public class AccountServiceTest {
         assertEquals(updatedBalance, actualBalance);
     }
 
-    // TODO :: make this a parametrized test
     @Test
     public void transferMoney__givenSufficientAmountInBenefactorsAcc__transfersSuccessfully()
             throws InvalidTransferException, AccountNotFoundException {
