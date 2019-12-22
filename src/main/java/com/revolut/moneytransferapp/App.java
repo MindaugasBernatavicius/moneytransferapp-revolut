@@ -1,6 +1,7 @@
 package com.revolut.moneytransferapp;
 
 import com.revolut.moneytransferapp.controller.AccountController;
+import com.revolut.moneytransferapp.controller.TransferController;
 import com.revolut.moneytransferapp.repository.AccountRepository;
 import com.revolut.moneytransferapp.service.AccountService;
 
@@ -11,6 +12,7 @@ public class App {
     private AccountRepository accountRepository;
     private AccountService accountService;
     private AccountController accountController;
+    private TransferController transferController;
 
     public static void main(String[] args) {
         App app = new App();
@@ -28,8 +30,8 @@ public class App {
     private void setupSparkConfig(){
         threadPool(10);
         after((req, res) -> res.type("application/json"));
-        notFound((req, res) -> "{\"message\":\"Custom 404\"}");
-        internalServerError((req, res) -> "{\"message\":\"Custom 500 handling\"}");
+        notFound((req, res) -> "{\"status\":\"ERROR\", \"message\":\"Not found\"}");
+        internalServerError((req, res) -> "{\"status\":\"ERROR\", \"message\":\"Server error\"}");
         // exception(YourCustomException.class, (exception, request, response) -> {
         //     // Handle the exception here
         // });
@@ -42,10 +44,20 @@ public class App {
     }
 
     private void setupRoutes(){
-        post("/accounts", accountController.createAccount);
-        get("/accounts", accountController.getAllAccounts);
-        get("/accounts/:id", accountController.getAccount);
-        put("/accounts/:id", accountController.updateAccount);
-        post("/accounts/:benefactorId/transfers/:beneficiaryId", accountController.transferMoney);
+        path("/api/v1", () -> {
+            // before("/*", (q, a) -> log.info("Received api call"));
+            path("/accounts", () -> {
+                post("", accountController.createAccount);
+                get("", accountController.getAllAccounts);
+                get("/:id", accountController.getAccount);
+                put("/:id", accountController.updateAccount);
+                post("/:benefactorId/transfers/:beneficiaryId", accountController.transferMoney);
+            });
+            // path("/transfers", () -> {
+            //     post("", transferController.toString());
+            // });
+        });
+
+        // path("/api/v2", () -> {}); // Reserved for v2
     }
 }

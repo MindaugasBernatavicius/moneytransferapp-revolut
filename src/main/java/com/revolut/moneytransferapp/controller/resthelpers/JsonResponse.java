@@ -2,21 +2,21 @@ package com.revolut.moneytransferapp.controller.resthelpers;
 
 import com.google.gson.JsonElement;
 
-public class StandardResponse {
+public class JsonResponse {
     private ResponseStatus status;
     private String message;
     private JsonElement data;
 
-    public StandardResponse(ResponseStatus status) {
+    public JsonResponse(ResponseStatus status) {
         this.status = status;
     }
 
-    public StandardResponse(ResponseStatus status, String message) {
+    public JsonResponse(ResponseStatus status, String message) {
         this.status = status;
         this.message = message;
     }
 
-    public StandardResponse(ResponseStatus status, JsonElement data) {
+    public JsonResponse(ResponseStatus status, JsonElement data) {
         this.status = status;
         this.data = data;
     }
