@@ -37,15 +37,15 @@ public class AppIntegrationFunctionalTest {
     @Test
     public void getAccounts__givenNoParameters__returnsAllAccounts(){
         // given / when
-        Response resp = req.makeReq("/accounts", "GET");
+        var resp = req.makeReq("/accounts", "GET");
         // then
-        String expectedResponse = "{" +
+        var expectedResponse = "{" +
                 "\"status\":\"SUCCESS\"," +
                 "\"data\":" +
                     "[" +
-                        "{\"id\":0,\"balance\":0.01}," +
-                        "{\"id\":1,\"balance\":1.01}," +
-                        "{\"id\":2,\"balance\":2.01}" +
+                        "{\"balance\":0.01,\"id\":0}," +
+                        "{\"balance\":1.01,\"id\":1}," +
+                        "{\"balance\":2.01,\"id\":2}" +
                     "]" +
                 "}";
         assertEquals(200, resp.getResponseCode());
@@ -55,11 +55,11 @@ public class AppIntegrationFunctionalTest {
     @Test
     public void getAccounts__givenExistingAccountId__returnsCorrespondingAccount(){
         // given
-        int accountId = 1;
+        var accountId = 1;
         // when
-        Response resp = req.makeReq("/accounts/" + accountId, "GET");
+        var resp = req.makeReq("/accounts/" + accountId, "GET");
         // then
-        String expectedResponse = "{\"status\":\"SUCCESS\",\"data\":{\"id\":1,\"balance\":1.01}}";
+        var expectedResponse = "{\"status\":\"SUCCESS\",\"data\":{\"balance\":1.01,\"id\":1}}";
         assertEquals(200, resp.getResponseCode());
         assertEquals(expectedResponse, resp.getResponseBody());
     }
@@ -67,9 +67,9 @@ public class AppIntegrationFunctionalTest {
     @Test
     public void getAccounts__givenNonExistingAccountId__returns404(){
         // given
-        int accountId = 50;
+        var accountId = 50;
         // when
-        Response resp = req.makeReq("/accounts/" + accountId, "GET");
+        var resp = req.makeReq("/accounts/" + accountId, "GET");
         // then
         assertEquals(404, resp.getResponseCode());
         assertEquals("{\"status\":\"ERROR\",\"message\":\"Account not found\"}", resp.getResponseBody());
@@ -78,7 +78,7 @@ public class AppIntegrationFunctionalTest {
     @Test
     public void postCreateAccount__whenCalled__createsAccountReturnsItsId(){
         // given / when
-        Response resp = req.makeReq("/accounts", "POST");
+        var resp = req.makeReq("/accounts", "POST");
         // then
         assertEquals(200, resp.getResponseCode());
         assertEquals("3", resp.getResponseBody());
@@ -88,20 +88,20 @@ public class AppIntegrationFunctionalTest {
     public void putUpdateAccount__whenExistingAccountIsBeingModified__thenReturns200BalancesIsIncreased()
             throws UnsupportedEncodingException {
         // given
-        Response createNewAccResp = req.makeReq("/accounts", "POST");
-        int createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
-        Response createdAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
-        Account updateObject = new Gson().fromJson(createdAccInfo.getResponseBodyJsonData(), Account.class);
-        BigDecimal createdAccountBalance = updateObject.getBalance();
+        var createNewAccResp = req.makeReq("/accounts", "POST");
+        var createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
+        var createdAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
+        var updateObject = new Gson().fromJson(createdAccInfo.getResponseBodyJsonData(), Account.class);
+        var createdAccountBalance = updateObject.getBalance();
 
         // when
-        String requestBody = "{\"balance\":\"" + createdAccountBalance.add(new BigDecimal("1")) + "\"}";
-        Response resp = req.makeReq("/accounts/" + createdAccountsID, "PUT", requestBody);
+        var requestBody = "{\"balance\":\"" + createdAccountBalance.add(new BigDecimal("1")) + "\"}";
+        var resp = req.makeReq("/accounts/" + createdAccountsID, "PUT", requestBody);
 
         // then
-        Response updatedAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
-        Account updatedAccount = new Gson().fromJson(updatedAccInfo.getResponseBodyJsonData(), Account.class);
-        BigDecimal updatedAccountBalance = updatedAccount.getBalance();
+        var updatedAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
+        var updatedAccount = new Gson().fromJson(updatedAccInfo.getResponseBodyJsonData(), Account.class);
+        var updatedAccountBalance = updatedAccount.getBalance();
         assertEquals(200, resp.getResponseCode());
         assertEquals("{\"status\":\"SUCCESS\",\"message\":\"Account updated\"}", resp.getResponseBody());
         assertEquals(createdAccountBalance.add(new BigDecimal("1")), updatedAccountBalance);
@@ -111,20 +111,20 @@ public class AppIntegrationFunctionalTest {
     public void putUpdateAccount__whenExistingAccountModifiedIncorrectData__thenReturns422AndError()
             throws UnsupportedEncodingException {
         // given
-        Response createNewAccResp = req.makeReq("/accounts", "POST");
-        int createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
-        Response createdAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
-        Account updateObject = new Gson().fromJson(createdAccInfo.getResponseBodyJsonData(), Account.class);
-        BigDecimal createdAccountBalance = updateObject.getBalance();
+        var createNewAccResp = req.makeReq("/accounts", "POST");
+        var createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
+        var createdAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
+        var updateObject = new Gson().fromJson(createdAccInfo.getResponseBodyJsonData(), Account.class);
+        var createdAccountBalance = updateObject.getBalance();
 
         // when
-        String requestBody = "{\"incorrect\":\"" + createdAccountBalance.add(new BigDecimal("1")) + "\"}";
-        Response resp = req.makeReq("/accounts/" + createdAccountsID, "PUT", requestBody);
+        var requestBody = "{\"incorrect\":\"" + createdAccountBalance.add(new BigDecimal("1")) + "\"}";
+        var resp = req.makeReq("/accounts/" + createdAccountsID, "PUT", requestBody);
 
         // then
-        Response updatedAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
-        Account updatedAccount = new Gson().fromJson(updatedAccInfo.getResponseBodyJsonData(), Account.class);
-        BigDecimal updatedAccountBalance = updatedAccount.getBalance();
+        var updatedAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
+        var updatedAccount = new Gson().fromJson(updatedAccInfo.getResponseBodyJsonData(), Account.class);
+        var updatedAccountBalance = updatedAccount.getBalance();
         assertEquals(422, resp.getResponseCode());
         assertEquals("{\"status\":\"ERROR\",\"message\":\"Incorrect body info\"}", resp.getResponseBody());
         assertEquals(createdAccountBalance, updatedAccountBalance);
@@ -134,52 +134,54 @@ public class AppIntegrationFunctionalTest {
     public void putUpdateAccount__whenNonExistingAccountIsBeingModified__then404returned()
             throws UnsupportedEncodingException {
         // given
-        Response createNewAccResp = req.makeReq("/accounts", "POST");
-        int createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
-        int nonExistingAccount = createdAccountsID + 5000;
-        Response createdAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
-        Account updateObject = new Gson().fromJson(createdAccInfo.getResponseBodyJsonData(), Account.class);
-        BigDecimal createdAccountBalance = updateObject.getBalance();
+        var createNewAccResp = req.makeReq("/accounts", "POST");
+        var createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
+        var nonExistingAccount = createdAccountsID + 5000;
+        var createdAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
+        var updateObject = new Gson().fromJson(createdAccInfo.getResponseBodyJsonData(), Account.class);
+        var createdAccountBalance = updateObject.getBalance();
 
         // when
-        String requestBody = "{\"balance\":\"" + createdAccountBalance.add(new BigDecimal("1")) + "\"}";
-        Response resp = req.makeReq("/accounts/" + nonExistingAccount, "PUT", requestBody);
+        var requestBody = "{\"balance\":\"" + createdAccountBalance.add(new BigDecimal("1")) + "\"}";
+        var resp = req.makeReq("/accounts/" + nonExistingAccount, "PUT", requestBody);
 
         // then
-        String responseData = "{\"status\":\"ERROR\",\"message\":\"Account not found\"}";
+        var responseData = "{\"status\":\"ERROR\",\"message\":\"Account not found\"}";
         assertEquals(404, resp.getResponseCode());
         assertEquals(responseData, resp.getResponseBody());
     }
 
     @Test
-    public void postAccountTransfer__givenIncorrectRequestBody__returns400(){
+    public void postTransfer__givenIncorrectRequestBody__returns400(){
         // given
-        String amountToTransfer = "0.99";
-        int accountFrom = 1;
-        int accountTo = 2;
-        String ulrPostfix = "/accounts/" + accountFrom + "/transfers/" + accountTo;
-        String requestBody = "{\"xxx\":\"" + amountToTransfer + "\"}";
-
+        var amountToTransfer = "0.99";
+        var accountFrom = 1;
+        var accountTo = 2;
+        var urlPostfix = "/transfers";
+        var requestBody = "{\"amount_x\":\"" + accountFrom
+                + "\", \"to_x\":\"" + accountTo
+                + "\", \"amount_x\":\"" + amountToTransfer + "\"}";
         // when
-        Response response1 = req.makeReq(ulrPostfix, "POST", requestBody);
+        var response1 = req.makeReq(urlPostfix, "POST", requestBody);
 
         // then
         var expectedResponse = "{\"status\":\"ERROR\",\"message\":\"Incorrect request body\"}";
-        assertEquals(400, response1.getResponseCode());
+        assertEquals(422, response1.getResponseCode());
         assertEquals(expectedResponse, response1.getResponseBody());
     }
 
     @Test
     public void postAccountTransfer__givenSufficientAmount__transferSucceeds(){
         // given
-        String amountToTransfer = "0.99";
-        int accountFrom = 1;
-        int accountTo = 2;
-        String ulrPostfix = "/accounts/" + accountFrom + "/transfers/" + accountTo;
-        String requestBody = "{\"transferAmount\":\"" + amountToTransfer + "\"}";
-
+        var amountToTransfer = "0.99";
+        var accountFrom = 1;
+        var accountTo = 2;
+        var urlPostfix = "/transfers";
+        var requestBody = "{\"benefactor\":" + accountFrom
+                        + ", \"beneficiary\":" + accountTo
+                        + ", \"amount\":" + amountToTransfer + "}";
         // when
-        Response response1 = req.makeReq(ulrPostfix, "POST", requestBody);
+        var response1 = req.makeReq(urlPostfix, "POST", requestBody);
 
         // then
         var expectedResponse = "{\"status\":\"SUCCESS\",\"message\":\"Transfer successful\"}";
@@ -188,32 +190,36 @@ public class AppIntegrationFunctionalTest {
     }
 
     @Test
-    public void postAccountTransfer__givenInsufficientAmount__transferFails(){
+    public void postTransfer__givenInsufficientAmount__transferFails(){
         // given
-        String amountToTransfer = "1.99";
-        String urlPostfix = "/accounts/1/transfers/2";
-        String requestBody = "{\"transferAmount\":\"" + amountToTransfer + "\"}";
-
+        var amountToTransfer = "1.99";
+        var accountFrom = 1;
+        var accountTo = 2;
+        var urlPostfix = "/transfers";
+        var requestBody = "{\"benefactor\":" + accountFrom
+                        + ", \"beneficiary\":" + accountTo
+                        + ", \"amount\":" + amountToTransfer + "}";
         // when
-        Response response1 = req.makeReq(urlPostfix, "POST", requestBody);
+        var response1 = req.makeReq(urlPostfix, "POST", requestBody);
 
         // then
-        String expectedResponseBody = "{\"status\":\"ERROR\",\"message\":\"Insufficient balance in benefactors account\"}";
+        var expectedResponseBody = "{\"status\":\"ERROR\",\"message\":\"Insufficient balance in benefactors account\"}";
         assertEquals(400, response1.getResponseCode());
         assertEquals(expectedResponseBody, response1.getResponseBody());
     }
 
     @Test
-    public void postAccountTransfer__givenNonExistingBeneficiaryAccount__returns404AndFailure(){
+    public void postTransfer__givenNonExistingBeneficiaryAccount__returns404AndFailure(){
         // given
-        String amountToTransfer = "0.99";
-        int accountFrom = 1;
-        int accountTo = 50;
-        String ulrPostfix = "/accounts/" + accountFrom + "/transfers/" + accountTo;
-        String requestBody = "{\"transferAmount\":\"" + amountToTransfer + "\"}";
-
+        var amountToTransfer = "0.99";
+        var accountFrom = 1;
+        var accountTo = 50;
+        var urlPostfix = "/transfers";
+        var requestBody = "{\"benefactor\":" + accountFrom
+                        + ", \"beneficiary\":" + accountTo
+                        + ", \"amount\":" + amountToTransfer + "}";
         // when
-        Response response1 = req.makeReq(ulrPostfix, "POST", requestBody);
+        Response response1 = req.makeReq(urlPostfix, "POST", requestBody);
 
         // then
         var expectedResponse = "{\"status\":\"ERROR\",\"message\":\"Account not found\"}";
@@ -222,16 +228,17 @@ public class AppIntegrationFunctionalTest {
     }
 
     @Test
-    public void postAccountTransfer__givenNonExistingBenefactorAccount__returns404AndFailure(){
+    public void postTransfer__givenNonExistingBenefactorAccount__returns404AndFailure(){
         // given
-        String amountToTransfer = "0.99";
-        int accountFrom = 50;
-        int accountTo = 2;
-        String ulrPostfix = "/accounts/" + accountFrom + "/transfers/" + accountTo;
-        String requestBody = "{\"transferAmount\":\"" + amountToTransfer + "\"}";
-
+        var amountToTransfer = "0.99";
+        var accountFrom = 50;
+        var accountTo = 2;
+        var urlPostfix = "/transfers";
+        var requestBody = "{\"benefactor\":" + accountFrom
+                        + ", \"beneficiary\":" + accountTo
+                        + ", \"amount\":" + amountToTransfer + "}";
         // when
-        Response response1 = req.makeReq(ulrPostfix, "POST", requestBody);
+        var response1 = req.makeReq(urlPostfix, "POST", requestBody);
 
         // then
         var expectedResponse = "{\"status\":\"ERROR\",\"message\":\"Account not found\"}";

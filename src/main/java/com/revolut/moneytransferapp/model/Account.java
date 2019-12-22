@@ -2,26 +2,18 @@ package com.revolut.moneytransferapp.model;
 
 import java.math.BigDecimal;
 
-public class Account {
+public class Account extends Model {
 
-    private Integer id;
     private BigDecimal balance;
 
     public Account(BigDecimal balance) {
+        super(0);
         this.balance = balance;
     }
 
     public Account(Integer id, BigDecimal balance) {
-        this.id = id;
+        super(id);
         this.balance = balance;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
     }
 
     public BigDecimal getBalance() {
@@ -35,7 +27,7 @@ public class Account {
     @Override
     public String toString() {
         return "Account{" +
-                "id=" + id +
+                "id=" + super.getId() +
                 ", balance=" + balance +
                 '}';
     }

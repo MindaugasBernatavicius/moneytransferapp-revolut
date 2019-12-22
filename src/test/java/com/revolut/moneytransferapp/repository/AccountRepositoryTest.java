@@ -31,7 +31,7 @@ public class AccountRepositoryTest {
         accountRepository.setAccounts(accountsIn);
 
         // when
-        var accountsOut = accountRepository.getAccounts();
+        var accountsOut = accountRepository.getAll();
 
         // then
         assertEquals(accountsIn, accountsOut);
@@ -49,7 +49,7 @@ public class AccountRepositoryTest {
         accountRepository.setAccounts(accountsIn);
 
         // when
-        var accountsOut = accountRepository.getAccountById(1);
+        var accountsOut = accountRepository.getById(1);
 
         // then
         assertEquals(accountsIn.get(0), accountsOut);
@@ -67,7 +67,7 @@ public class AccountRepositoryTest {
         accountRepository.setAccounts(accountsIn);
 
         // when
-        var accountsOut = accountRepository.getAccountById(3);
+        var accountsOut = accountRepository.getById(3);
 
         // then
         assertEquals(null, accountsOut);
@@ -79,10 +79,10 @@ public class AccountRepositoryTest {
         var accountIn = new Account(new BigDecimal("100.99"));
 
         // when
-        int createdAccId = accountRepository.saveAccount(accountIn);
+        int createdAccId = accountRepository.save(accountIn);
 
         // then
-        var actualBalance = accountRepository.getAccountById(createdAccId).getBalance();
+        var actualBalance = accountRepository.getById(createdAccId).getBalance();
         assertEquals(accountIn.getBalance(), actualBalance);
     }
 
@@ -98,10 +98,10 @@ public class AccountRepositoryTest {
 
         // when
         var updatedAccount = new Account(accId1, balance2);
-        accountRepository.updateAccount(updatedAccount);
+        accountRepository.update(updatedAccount);
 
         // then
-        var updatedBalance = accountRepository.getAccountById(accId1).getBalance();
+        var updatedBalance = accountRepository.getById(accId1).getBalance();
         assertEquals(accountIn.getBalance(), updatedBalance);
     }
 
@@ -116,7 +116,7 @@ public class AccountRepositoryTest {
 
         // when
         var updatedAccount = new Account(nonExistentAccId1, balance2);
-        accountRepository.updateAccount(updatedAccount);
+        accountRepository.update(updatedAccount);
 
         // then
         assertEquals(accountIn.getBalance(), balance1);

@@ -4,10 +4,7 @@ import com.google.gson.Gson;
 import com.revolut.moneytransferapp.model.Account;
 import com.revolut.moneytransferapp.testutils.RequestUtil;
 import com.revolut.moneytransferapp.testutils.Response;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.*;
 
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -21,6 +18,7 @@ import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AppIntegrationConcurrentTest {
 
     private static final String URL = "http://localhost:4567/api/v1";
@@ -41,7 +39,7 @@ public class AppIntegrationConcurrentTest {
         App.stopService();
     }
 
-    @RepeatedTest(10)
+    @RepeatedTest(10) @Order(1)
     public void createAccount__givenParallelRequests__duplicateAccountNotCreated()
             throws ExecutionException, InterruptedException {
         // given
@@ -53,9 +51,9 @@ public class AppIntegrationConcurrentTest {
         // ... check if they are sequential (no skips, no duplicates).
 
         // int degreeOfParallelism = Runtime.getRuntime().availableProcessors() * 3;
-        int degreeOfParallelism = 24;
-        ExecutorService executor = Executors.newFixedThreadPool(degreeOfParallelism);
-        List<Future<InputStream>> responses = new ArrayList<>();
+        var degreeOfParallelism = 24;
+        var executor = Executors.newFixedThreadPool(degreeOfParallelism);
+        var responses = new ArrayList<Future<InputStream>>();
 
         // when
         for (int i = 0; i < degreeOfParallelism; i++)
@@ -70,54 +68,54 @@ public class AppIntegrationConcurrentTest {
             responses.get(i).get();
 
         // then
-        Response actualResponse = req.makeReq("/accounts", "GET");
-        int actualResponseCode = actualResponse.getResponseCode();
-        String actualResponseBody = actualResponse.getResponseBody();
-        String expectedResponseBody = "{" +
+        var actualResponse = req.makeReq("/accounts", "GET");
+        var actualResponseCode = actualResponse.getResponseCode();
+        var actualResponseBody = actualResponse.getResponseBody();
+        var expectedResponseBody = "{" +
                 "\"status\":\"SUCCESS\"," +
                 "\"data\":[" +
-                    "{\"id\":0,\"balance\":0.01},{\"id\":1,\"balance\":1.01},{\"id\":2,\"balance\":2.01}," +
-                    "{\"id\":3,\"balance\":0.0},{\"id\":4,\"balance\":0.0},{\"id\":5,\"balance\":0.0}," +
-                    "{\"id\":6,\"balance\":0.0},{\"id\":7,\"balance\":0.0},{\"id\":8,\"balance\":0.0}," +
-                    "{\"id\":9,\"balance\":0.0},{\"id\":10,\"balance\":0.0},{\"id\":11,\"balance\":0.0}," +
-                    "{\"id\":12,\"balance\":0.0},{\"id\":13,\"balance\":0.0},{\"id\":14,\"balance\":0.0}," +
-                    "{\"id\":15,\"balance\":0.0},{\"id\":16,\"balance\":0.0},{\"id\":17,\"balance\":0.0}," +
-                    "{\"id\":18,\"balance\":0.0},{\"id\":19,\"balance\":0.0},{\"id\":20,\"balance\":0.0}," +
-                    "{\"id\":21,\"balance\":0.0},{\"id\":22,\"balance\":0.0},{\"id\":23,\"balance\":0.0}," +
-                    "{\"id\":24,\"balance\":0.0},{\"id\":25,\"balance\":0.0},{\"id\":26,\"balance\":0.0}" +
+                    "{\"balance\":0.01,\"id\":0},{\"balance\":1.01,\"id\":1},{\"balance\":2.01,\"id\":2}," +
+                    "{\"balance\":0.0,\"id\":3},{\"balance\":0.0,\"id\":4},{\"balance\":0.0,\"id\":5}," +
+                    "{\"balance\":0.0,\"id\":6},{\"balance\":0.0,\"id\":7},{\"balance\":0.0,\"id\":8}," +
+                    "{\"balance\":0.0,\"id\":9},{\"balance\":0.0,\"id\":10},{\"balance\":0.0,\"id\":11}," +
+                    "{\"balance\":0.0,\"id\":12},{\"balance\":0.0,\"id\":13},{\"balance\":0.0,\"id\":14}," +
+                    "{\"balance\":0.0,\"id\":15},{\"balance\":0.0,\"id\":16},{\"balance\":0.0,\"id\":17}," +
+                    "{\"balance\":0.0,\"id\":18},{\"balance\":0.0,\"id\":19},{\"balance\":0.0,\"id\":20}," +
+                    "{\"balance\":0.0,\"id\":21},{\"balance\":0.0,\"id\":22},{\"balance\":0.0,\"id\":23}," +
+                    "{\"balance\":0.0,\"id\":24},{\"balance\":0.0,\"id\":25},{\"balance\":0.0,\"id\":26}" +
                 "]}";
 
         assertEquals(200, actualResponseCode);
         assertEquals(expectedResponseBody, actualResponseBody);
     }
 
-    @RepeatedTest(10)
+    @RepeatedTest(10) @Order(2)
     public void transaction__givenFixedAccountAmount__concurrentTransfersDrawFromAccountCorrectly()
             throws ExecutionException, InterruptedException, UnsupportedEncodingException {
 
         // given - constructing the threadpool
-        int degreeOfParallelism = Runtime.getRuntime().availableProcessors() * 3;
-        ExecutorService executor = Executors.newFixedThreadPool(degreeOfParallelism);
-        List<Future<InputStream>> responses = new ArrayList<>();
+        var degreeOfParallelism = Runtime.getRuntime().availableProcessors() * 3;
+        var executor = Executors.newFixedThreadPool(degreeOfParallelism);
+        var responses = new ArrayList<Future<InputStream>>();
 
         // given - preparing the account to have enought money for all parallel transfers
-        int benefactorAccId = 1; int beneficieryAccId = 2;
-        String requestBody = "{\"balance\":\"" + new BigDecimal("100") + "\"}";
-        Response resp = req.makeReq("/accounts/" + benefactorAccId, "PUT", requestBody);
+        var benefactorAccId = 1; var beneficieryAccId = 2;
+        var requestBody = "{\"balance\":\"" + new BigDecimal("100") + "\"}";
+        var resp = req.makeReq("/accounts/" + benefactorAccId, "PUT", requestBody);
 
         // given - get the initial blance for both accounts before staring the threads
-        Response benefactorResponseBefore = req.makeReq("/accounts/" + benefactorAccId, "GET");
-        Account benefactorBefore = new Gson().fromJson(benefactorResponseBefore.getResponseBodyJsonData(), Account.class);
-        BigDecimal benefactorBalanceBefore = benefactorBefore.getBalance();
+        var benefactorResponseBefore = req.makeReq("/accounts/" + benefactorAccId, "GET");
+        var benefactorBefore = new Gson().fromJson(benefactorResponseBefore.getResponseBodyJsonData(), Account.class);
+        var benefactorBalanceBefore = benefactorBefore.getBalance();
 
-        Response beneficiaryResponseBefore = req.makeReq("/accounts/" + beneficieryAccId, "GET");
-        Account beneficiaryBefore = new Gson().fromJson(beneficiaryResponseBefore.getResponseBodyJsonData(), Account.class);
-        BigDecimal beneficiaryBalanceBefore = beneficiaryBefore.getBalance();
+        var beneficiaryResponseBefore = req.makeReq("/accounts/" + beneficieryAccId, "GET");
+        var beneficiaryBefore = new Gson().fromJson(beneficiaryResponseBefore.getResponseBodyJsonData(), Account.class);
+        var beneficiaryBalanceBefore = beneficiaryBefore.getBalance();
 
         // when
         for (int i = 0; i < degreeOfParallelism; i++){
-            String reqUrl = "/accounts/" + benefactorAccId + "/transfers/" + beneficieryAccId;
-            String reqBody = "{\"transferAmount\":\"" + 1 + "\"}";
+            var reqUrl = "/transfers";
+            var reqBody = "{\"benefactor\":" + 1 + ", \"beneficiary\":" + 2 + ", \"amount\":" + 1 + "}";
             responses.add(executor.submit(() -> req.makeReq(reqUrl, "POST", reqBody).getResponseBodyStream()));
         }
         executor.shutdown();
@@ -125,20 +123,20 @@ public class AppIntegrationConcurrentTest {
         for (int i = 0; i < responses.size(); i++)
             responses.get(i).get();
 
-        Response benefactorResponseAfter = req.makeReq("/accounts/" + benefactorAccId, "GET");
-        Account benefactorAfter = new Gson().fromJson(benefactorResponseAfter.getResponseBodyJsonData(), Account.class);
-        BigDecimal benefactorBalanceAfter = benefactorAfter.getBalance();
+        var benefactorResponseAfter = req.makeReq("/accounts/" + benefactorAccId, "GET");
+        var benefactorAfter = new Gson().fromJson(benefactorResponseAfter.getResponseBodyJsonData(), Account.class);
+        var benefactorBalanceAfter = benefactorAfter.getBalance();
 
-        Response beneficiaryResponseAfter = req.makeReq("/accounts/" + beneficieryAccId, "GET");
-        Account beneficiaryAfter = new Gson().fromJson(beneficiaryResponseAfter.getResponseBodyJsonData(), Account.class);
-        BigDecimal beneficiaryBalanceAfter = beneficiaryAfter.getBalance();
+        var beneficiaryResponseAfter = req.makeReq("/accounts/" + beneficieryAccId, "GET");
+        var beneficiaryAfter = new Gson().fromJson(beneficiaryResponseAfter.getResponseBodyJsonData(), Account.class);
+        var beneficiaryBalanceAfter = beneficiaryAfter.getBalance();
 
         // then
-        BigDecimal expectedBenefactorBalance = benefactorBalanceBefore
+        var expectedBenefactorBalance = benefactorBalanceBefore
                 .subtract(new BigDecimal(Integer.toString(degreeOfParallelism)));
         assertEquals(expectedBenefactorBalance, benefactorBalanceAfter);
 
-        BigDecimal expectedBeneficiaryBalance = beneficiaryBalanceBefore
+        var expectedBeneficiaryBalance = beneficiaryBalanceBefore
                 .add(new BigDecimal(Integer.toString(degreeOfParallelism)));
         assertEquals(expectedBeneficiaryBalance, beneficiaryBalanceAfter);
     }
