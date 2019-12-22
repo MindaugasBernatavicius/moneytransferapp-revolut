@@ -1,10 +1,14 @@
-package com.revolut.moneytransferapp;
+package com.revolut.moneytransferapp.testutils;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Response {
@@ -38,6 +42,22 @@ public class Response {
             BufferedReader br = new BufferedReader(new InputStreamReader(responseBodyStream));
             String response = br.lines().collect(Collectors.joining(""));
             return !response.equals("null") ? response : "";
+        }
+    }
+
+    public String getResponseBodyJsonData() throws UnsupportedEncodingException {
+        if(responseBodyStream == null){
+            return "";
+        } else {
+            BufferedReader br = new BufferedReader(new InputStreamReader(responseBodyStream));
+            String response = br.lines().collect(Collectors.joining(""));
+            if(!response.equals("null")){
+                String decodedResponse = URLDecoder.decode(response, "UTF-8");
+                Matcher matcher = Pattern.compile("data\":(.+)}").matcher(decodedResponse);
+                return matcher.find() ? matcher.group(1) : "";
+            } else {
+                return "";
+            }
         }
     }
 

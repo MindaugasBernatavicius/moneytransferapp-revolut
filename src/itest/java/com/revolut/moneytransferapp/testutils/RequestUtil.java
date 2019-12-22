@@ -1,4 +1,4 @@
-package com.revolut.moneytransferapp;
+package com.revolut.moneytransferapp.testutils;
 
 import java.io.IOException;
 import java.io.InputStream;

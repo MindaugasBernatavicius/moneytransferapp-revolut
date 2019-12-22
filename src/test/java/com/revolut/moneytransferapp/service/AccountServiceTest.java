@@ -2,8 +2,8 @@ package com.revolut.moneytransferapp.service;
 
 import com.revolut.moneytransferapp.model.Account;
 import com.revolut.moneytransferapp.repository.AccountRepository;
-import com.revolut.moneytransferapp.service.exceptions.AccountNotFoundException;
-import com.revolut.moneytransferapp.service.exceptions.InvalidTransferException;
+import com.revolut.moneytransferapp.service.serviceexception.AccountNotFoundException;
+import com.revolut.moneytransferapp.service.serviceexception.InvalidTransferException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

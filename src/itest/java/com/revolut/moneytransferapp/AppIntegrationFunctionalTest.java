@@ -2,11 +2,14 @@ package com.revolut.moneytransferapp;
 
 import com.google.gson.Gson;
 import com.revolut.moneytransferapp.model.Account;
+import com.revolut.moneytransferapp.testutils.RequestUtil;
+import com.revolut.moneytransferapp.testutils.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,10 +39,15 @@ public class AppIntegrationFunctionalTest {
         // given / when
         Response resp = req.makeReq("/accounts", "GET");
         // then
-        String expectedResponse = "[" +
-                "{\"id\":0,\"balance\":0.01}," +
-                "{\"id\":1,\"balance\":1.01}," +
-                "{\"id\":2,\"balance\":2.01}]";
+        String expectedResponse = "{" +
+                "\"status\":\"SUCCESS\"," +
+                "\"data\":" +
+                    "[" +
+                        "{\"id\":0,\"balance\":0.01}," +
+                        "{\"id\":1,\"balance\":1.01}," +
+                        "{\"id\":2,\"balance\":2.01}" +
+                    "]" +
+                "}";
         assertEquals(200, resp.getResponseCode());
         assertEquals(expectedResponse, resp.getResponseBody());
     }
@@ -51,7 +59,7 @@ public class AppIntegrationFunctionalTest {
         // when
         Response resp = req.makeReq("/accounts/" + accountId, "GET");
         // then
-        String expectedResponse = "{\"id\":1,\"balance\":1.01}";
+        String expectedResponse = "{\"status\":\"SUCCESS\",\"data\":{\"id\":1,\"balance\":1.01}}";
         assertEquals(200, resp.getResponseCode());
         assertEquals(expectedResponse, resp.getResponseBody());
     }
@@ -64,7 +72,7 @@ public class AppIntegrationFunctionalTest {
         Response resp = req.makeReq("/accounts/" + accountId, "GET");
         // then
         assertEquals(404, resp.getResponseCode());
-        assertEquals("Account not found", resp.getResponseBody());
+        assertEquals("{\"status\":\"ERROR\",\"message\":\"Account not found\"}", resp.getResponseBody());
     }
 
     @Test
@@ -77,12 +85,13 @@ public class AppIntegrationFunctionalTest {
     }
 
     @Test
-    public void putUpdateAccount__whenExistingAccountIsBeingModified__thenReturns200BalancesIsIncreased(){
+    public void putUpdateAccount__whenExistingAccountIsBeingModified__thenReturns200BalancesIsIncreased()
+            throws UnsupportedEncodingException {
         // given
         Response createNewAccResp = req.makeReq("/accounts", "POST");
         int createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
         Response createdAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
-        Account updateObject = new Gson().fromJson(createdAccInfo.getResponseBody(), Account.class);
+        Account updateObject = new Gson().fromJson(createdAccInfo.getResponseBodyJsonData(), Account.class);
         BigDecimal createdAccountBalance = updateObject.getBalance();
 
         // when
@@ -91,20 +100,45 @@ public class AppIntegrationFunctionalTest {
 
         // then
         Response updatedAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
-        Account updatedAccount = new Gson().fromJson(updatedAccInfo.getResponseBody(), Account.class);
+        Account updatedAccount = new Gson().fromJson(updatedAccInfo.getResponseBodyJsonData(), Account.class);
         BigDecimal updatedAccountBalance = updatedAccount.getBalance();
         assertEquals(200, resp.getResponseCode());
+        assertEquals("{\"status\":\"SUCCESS\",\"message\":\"Account updated\"}", resp.getResponseBody());
         assertEquals(createdAccountBalance.add(new BigDecimal("1")), updatedAccountBalance);
     }
 
     @Test
-    public void putUpdateAccount__whenNonExistingAccountIsBeingModified__then404returned(){
+    public void putUpdateAccount__whenExistingAccountModifiedIncorrectData__thenReturns422AndError()
+            throws UnsupportedEncodingException {
+        // given
+        Response createNewAccResp = req.makeReq("/accounts", "POST");
+        int createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
+        Response createdAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
+        Account updateObject = new Gson().fromJson(createdAccInfo.getResponseBodyJsonData(), Account.class);
+        BigDecimal createdAccountBalance = updateObject.getBalance();
+
+        // when
+        String requestBody = "{\"incorrect\":\"" + createdAccountBalance.add(new BigDecimal("1")) + "\"}";
+        Response resp = req.makeReq("/accounts/" + createdAccountsID, "PUT", requestBody);
+
+        // then
+        Response updatedAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
+        Account updatedAccount = new Gson().fromJson(updatedAccInfo.getResponseBodyJsonData(), Account.class);
+        BigDecimal updatedAccountBalance = updatedAccount.getBalance();
+        assertEquals(422, resp.getResponseCode());
+        assertEquals("{\"status\":\"ERROR\",\"message\":\"Incorrect body info\"}", resp.getResponseBody());
+        assertEquals(createdAccountBalance, updatedAccountBalance);
+    }
+
+    @Test
+    public void putUpdateAccount__whenNonExistingAccountIsBeingModified__then404returned()
+            throws UnsupportedEncodingException {
         // given
         Response createNewAccResp = req.makeReq("/accounts", "POST");
         int createdAccountsID = Integer.parseInt(createNewAccResp.getResponseBody());
         int nonExistingAccount = createdAccountsID + 5000;
         Response createdAccInfo = req.makeReq("/accounts/" + createdAccountsID, "GET");
-        Account updateObject = new Gson().fromJson(createdAccInfo.getResponseBody(), Account.class);
+        Account updateObject = new Gson().fromJson(createdAccInfo.getResponseBodyJsonData(), Account.class);
         BigDecimal createdAccountBalance = updateObject.getBalance();
 
         // when
@@ -112,8 +146,27 @@ public class AppIntegrationFunctionalTest {
         Response resp = req.makeReq("/accounts/" + nonExistingAccount, "PUT", requestBody);
 
         // then
+        String responseData = "{\"status\":\"ERROR\",\"message\":\"Account not found\"}";
         assertEquals(404, resp.getResponseCode());
-        assertEquals("Account not found", resp.getResponseBody());
+        assertEquals(responseData, resp.getResponseBody());
+    }
+
+    @Test
+    public void postAccountTransfer__givenIncorrectRequestBody__returns400(){
+        // given
+        String amountToTransfer = "0.99";
+        int accountFrom = 1;
+        int accountTo = 2;
+        String ulrPostfix = "/accounts/" + accountFrom + "/transfers/" + accountTo;
+        String requestBody = "{\"xxx\":\"" + amountToTransfer + "\"}";
+
+        // when
+        Response response1 = req.makeReq(ulrPostfix, "POST", requestBody);
+
+        // then
+        var expectedResponse = "{\"status\":\"ERROR\",\"message\":\"Incorrect request body\"}";
+        assertEquals(400, response1.getResponseCode());
+        assertEquals(expectedResponse, response1.getResponseBody());
     }
 
     @Test
@@ -129,8 +182,9 @@ public class AppIntegrationFunctionalTest {
         Response response1 = req.makeReq(ulrPostfix, "POST", requestBody);
 
         // then
+        var expectedResponse = "{\"status\":\"SUCCESS\",\"message\":\"Transfer successful\"}";
         assertEquals(200, response1.getResponseCode());
-        assertEquals("Success", response1.getResponseBody());
+        assertEquals(expectedResponse, response1.getResponseBody());
     }
 
     @Test
@@ -144,7 +198,7 @@ public class AppIntegrationFunctionalTest {
         Response response1 = req.makeReq(urlPostfix, "POST", requestBody);
 
         // then
-        String expectedResponseBody = "Failure, insufficient funds in benefactor account";
+        String expectedResponseBody = "{\"status\":\"ERROR\",\"message\":\"Insufficient balance in benefactors account\"}";
         assertEquals(400, response1.getResponseCode());
         assertEquals(expectedResponseBody, response1.getResponseBody());
     }
@@ -162,8 +216,9 @@ public class AppIntegrationFunctionalTest {
         Response response1 = req.makeReq(ulrPostfix, "POST", requestBody);
 
         // then
+        var expectedResponse = "{\"status\":\"ERROR\",\"message\":\"Account not found\"}";
         assertEquals(404, response1.getResponseCode());
-        assertEquals("Failure, account not found", response1.getResponseBody());
+        assertEquals(expectedResponse, response1.getResponseBody());
     }
 
     @Test
@@ -179,7 +234,8 @@ public class AppIntegrationFunctionalTest {
         Response response1 = req.makeReq(ulrPostfix, "POST", requestBody);
 
         // then
+        var expectedResponse = "{\"status\":\"ERROR\",\"message\":\"Account not found\"}";
         assertEquals(404, response1.getResponseCode());
-        assertEquals("Failure, account not found", response1.getResponseBody());
+        assertEquals(expectedResponse, response1.getResponseBody());
     }
 }

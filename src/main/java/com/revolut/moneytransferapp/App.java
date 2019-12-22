@@ -28,6 +28,11 @@ public class App {
     private void setupSparkConfig(){
         threadPool(10);
         after((req, res) -> res.type("application/json"));
+        notFound((req, res) -> "{\"message\":\"Custom 404\"}");
+        internalServerError((req, res) -> "{\"message\":\"Custom 500 handling\"}");
+        // exception(YourCustomException.class, (exception, request, response) -> {
+        //     // Handle the exception here
+        // });
     }
 
     private void setupDependencies(){
