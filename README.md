@@ -19,7 +19,8 @@
 - `java -jar target/money-transfer-app-1.0-SNAPSHOT-jar-with-dependencies.jar`
 
 ## Testing
-- `
+- `mvn surefire:test` - run unit tests
+- `mvn failsafe:integration-test` - run 
 
 ## Implementation details
 
