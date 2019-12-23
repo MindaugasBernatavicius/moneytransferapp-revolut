@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class AppIntegrationConcurrentTest {
+public class AppIntegrationConcurrentIT {
 
     private static final String URL = "http://localhost:4567/api/v1";
     private static final RequestUtil req = new RequestUtil();

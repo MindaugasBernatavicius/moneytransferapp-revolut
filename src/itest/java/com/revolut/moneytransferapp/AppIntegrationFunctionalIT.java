@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AppIntegrationFunctionalTest {
+public class AppIntegrationFunctionalIT {
 
     private static final String URL = "http://localhost:4567/api/v1";
     private static final RequestUtil req = new RequestUtil();
