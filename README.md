@@ -14,12 +14,19 @@
 2. There are no detailed requirements, use common sense.
 3. Please put your work on github or bitbucket.
 
+## Launching
+
+## Testing
+
 ## Implementation details
 
 The following tools were used:
 - Spark microframework with Java - far handling HTTP level.
 - Junit5 - test running tests mechanisms and assertions.
 - Gson - object serialization and deserialization from to JSON.
+- Slf4j-simple - logging provider w/ java.util.logging implementation.
+- Dependency injection was handled manually - no framework, bu Guice would have been the choice.
+- Data stored in-memory, primitive collections (explicit choice) - jOOQ or JDBI would have been the choice otherwise. 
 
 The following project structure was chosen:
 ```
@@ -39,3 +46,17 @@ src
     └───moneytransferapp  <-- functional unit tests and (where appropriate) concurrency tests
     └───resources         <-- unit test resources (logging configuration for tests)
 ```
+
+REST response structure
+```
+{
+    "status": "SUCCESS",
+    "data": \[ ... \]
+}
+```
+
+General remarks
+- 
+
+What is still lacking
+- 
