@@ -61,33 +61,21 @@ Response structure:
 ```
 Endpoints:
 
-| Verb / URL                        | Usage       |
-| -------------                     |-------------|
+| Verb / URL                        | Usage               |
+| ----------------------------------|---------------------|
 | GET  /api/v1/accounts             | Obtain all accounts |
 | GET  /api/v1/accounts/{accountId} | Get account by id   |
-| POST /api/v1/accounts      | Obtain all accounts |
-| GET  /api/v1/accounts      | Obtain all accounts |
+| POST /api/v1/accounts             | Create a new empty account |
+| PUT  /api/v1/accounts/{accountId} | Change account |
+| GET  /api/v1/transfers            | Obtain all transfers |
+| GET  /api/v1/transfers/{id}       | Get transfer by id  |
+| POST /transfers <br>{ “from”: “1”, “to”: “2”, “amount”:”500.00”} | Transfer given amount of money from account to other
 
 
 
 
 
 
-
-
-Create a new empty account
-
-
-PUT /accounts/{accountId}
-Change account
-
-
-GET /transfers
-Obtain all transfer information
-GET /transfers/{id}
-POST /transfers
-{ “from”: “1”, “to”: “2”, “amount”:”500.00”}
-Transfer given amount of money from account to other
 
 
 
