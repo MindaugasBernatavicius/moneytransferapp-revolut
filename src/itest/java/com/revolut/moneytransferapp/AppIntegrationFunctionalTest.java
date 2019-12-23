@@ -53,7 +53,7 @@ public class AppIntegrationFunctionalTest {
     }
 
     @Test
-    public void getAccounts__givenExistingAccountId__returnsCorrespondingAccount(){
+    public void getAccount__givenExistingAccountId__returnsCorrespondingAccount(){
         // given
         var accountId = 1;
         // when
@@ -65,7 +65,7 @@ public class AppIntegrationFunctionalTest {
     }
 
     @Test
-    public void getAccounts__givenNonExistingAccountId__returns404(){
+    public void getAccount__givenNonExistingAccountId__returns404(){
         // given
         var accountId = 50;
         // when

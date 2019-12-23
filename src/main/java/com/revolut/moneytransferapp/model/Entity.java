@@ -1,18 +1,19 @@
 package com.revolut.moneytransferapp.model;
 
-abstract class Model {
+import com.google.gson.annotations.Expose;
+
+abstract class Entity {
+
+    @Expose(serialize = true)
     private Integer id;
 
-    public Model(){};
-
-    public Model(Integer id) {
+    public Entity(){};
+    public Entity(Integer id) {
         this.id = id;
     }
-
     public Integer getId() {
         return id;
     }
-
     public void setId(Integer id) {
         this.id = id;
     }

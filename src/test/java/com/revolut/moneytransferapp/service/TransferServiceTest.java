@@ -3,6 +3,7 @@ package com.revolut.moneytransferapp.service;
 import com.revolut.moneytransferapp.model.Account;
 import com.revolut.moneytransferapp.repository.AccountRepository;
 import com.revolut.moneytransferapp.repository.TransferRepository;
+import com.revolut.moneytransferapp.repository.repositoryexceptions.OptimisticLockException;
 import com.revolut.moneytransferapp.service.serviceexception.AccountNotFoundException;
 import com.revolut.moneytransferapp.service.serviceexception.InvalidTransferException;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,7 +35,7 @@ public class TransferServiceTest {
 
     @Test
     public void createTransfer__givenSufficientAmountInBenefactorsAcc__transfersSuccessfully()
-            throws InvalidTransferException, AccountNotFoundException {
+            throws InvalidTransferException, AccountNotFoundException, OptimisticLockException {
         // given
         var benefactorId = 1; var beneficiaryId = 2;
         var benefactorsInitialBalance = new BigDecimal("1");

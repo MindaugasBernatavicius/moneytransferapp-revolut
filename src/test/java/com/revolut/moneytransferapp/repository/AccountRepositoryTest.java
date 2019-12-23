@@ -1,14 +1,16 @@
 package com.revolut.moneytransferapp.repository;
 
 import com.revolut.moneytransferapp.model.Account;
+import com.revolut.moneytransferapp.repository.repositoryexceptions.OptimisticLockException;
+import com.revolut.moneytransferapp.service.serviceexception.AccountNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class AccountRepositoryTest {
 
@@ -87,22 +89,23 @@ public class AccountRepositoryTest {
     }
 
     @Test
-    void updateAccount__whenCalledWithValidAccountRef__thenSuccessfullyModifiesAccount(){
+    void updateAccount__whenCalledWithValidAccountRef__thenSuccessfullyModifiesAccount()
+            throws OptimisticLockException, AccountNotFoundException {
         // given
-        int accId1 = 1; var balance1 = new BigDecimal("1.01");
-        var accountIn = new Account(accId1, balance1);
+        int accId1 = 1; var initialBalance = new BigDecimal("1.01");
+        var accountIn = new Account(accId1, initialBalance);
         var accountsIn = new ArrayList<Account>(){{ add(accountIn); }};
         accountRepository.setAccounts(accountsIn);
 
-        var balance2 = new BigDecimal("2.01");
+        var newBalance = new BigDecimal("2.01");
 
         // when
-        var updatedAccount = new Account(accId1, balance2);
+        var updatedAccount = new Account(accId1, newBalance);
         accountRepository.update(updatedAccount);
 
         // then
         var updatedBalance = accountRepository.getById(accId1).getBalance();
-        assertEquals(accountIn.getBalance(), updatedBalance);
+        assertEquals(newBalance, updatedBalance);
     }
 
     @Test
@@ -113,12 +116,12 @@ public class AccountRepositoryTest {
         var accountIn = new Account(existentAccId1, balance1);
         var accountsIn = new ArrayList<Account>(){{ add(accountIn); }};
         accountRepository.setAccounts(accountsIn);
-
-        // when
         var updatedAccount = new Account(nonExistentAccId1, balance2);
-        accountRepository.update(updatedAccount);
 
-        // then
+        // when / then
+        assertThrows(AccountNotFoundException.class,
+                () -> accountRepository.update(updatedAccount));
         assertEquals(accountIn.getBalance(), balance1);
+        assertEquals(0, accountIn.getVersion());
     }
 }

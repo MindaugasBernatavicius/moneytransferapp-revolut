@@ -2,6 +2,7 @@ package com.revolut.moneytransferapp.service;
 
 import com.revolut.moneytransferapp.model.Account;
 import com.revolut.moneytransferapp.repository.AccountRepository;
+import com.revolut.moneytransferapp.repository.repositoryexceptions.OptimisticLockException;
 import com.revolut.moneytransferapp.service.serviceexception.AccountNotFoundException;
 
 import java.math.BigDecimal;
@@ -17,20 +18,18 @@ public class AccountService {
     public List<Account> getAccounts() { return accountRepository.getAll(); }
 
     public Account getAccountById(int id) throws AccountNotFoundException {
-        Account account = accountRepository.getById(id);
+        var account = accountRepository.getById(id);
         if (account == null) throw new AccountNotFoundException();
         return account;
     }
 
     public synchronized int createAccount(){
-        Account account = new Account(new BigDecimal("0.0"));
+        var account = new Account(new BigDecimal("0.0"));
         return accountRepository.save(account);
     }
 
-    public synchronized void updateAccount(Account updateObject) throws AccountNotFoundException {
-        Integer id = updateObject.getId();
-        if(getAccountById(id) == null)
-            throw new AccountNotFoundException();
+    public void updateAccount(Account updateObject)
+            throws AccountNotFoundException, OptimisticLockException {
         accountRepository.update(updateObject);
     }
 }

@@ -2,7 +2,7 @@ package com.revolut.moneytransferapp.model;
 
 import java.math.BigDecimal;
 
-public class Transfer extends Model {
+public class Transfer extends Entity {
     private Integer benefactor;
     private Integer beneficiary;
     private BigDecimal amount;

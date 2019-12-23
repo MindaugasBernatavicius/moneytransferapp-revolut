@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.revolut.moneytransferapp.controller.resthelpers.JsonResponse;
 import com.revolut.moneytransferapp.controller.resthelpers.ResponseStatus;
 import com.revolut.moneytransferapp.model.Transfer;
+import com.revolut.moneytransferapp.repository.repositoryexceptions.OptimisticLockException;
 import com.revolut.moneytransferapp.service.TransferService;
 import com.revolut.moneytransferapp.service.serviceexception.AccountNotFoundException;
 import com.revolut.moneytransferapp.service.serviceexception.InvalidTransferException;
@@ -69,6 +70,11 @@ public class TransferController {
         } catch (NullPointerException e){
             response.status(422);
             var respString = "Incorrect request body";
+            var jsonResponse = new JsonResponse(ResponseStatus.ERROR, respString);
+            return new Gson().toJson(jsonResponse);
+        } catch (OptimisticLockException e) {
+            response.status(409);
+            var respString = "Information changed during the execution of your request, please retry";
             var jsonResponse = new JsonResponse(ResponseStatus.ERROR, respString);
             return new Gson().toJson(jsonResponse);
         }

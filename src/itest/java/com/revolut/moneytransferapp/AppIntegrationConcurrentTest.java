@@ -6,7 +6,9 @@ import com.revolut.moneytransferapp.testutils.RequestUtil;
 import com.revolut.moneytransferapp.testutils.Response;
 import org.junit.jupiter.api.*;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -15,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -46,7 +49,7 @@ public class AppIntegrationConcurrentTest {
 
         // ... Hardcoding the degree or parallelism for now due to the fact that
         // ... if different machines are to be used the test would break. This is due
-        // ... to the fact that the expected response is fully precomputed. An approach
+        // ... because the expected response is fully precomputed. An approach
         // ... to fix this would be to extract the ids from GET /accounts response and
         // ... check if they are sequential (no skips, no duplicates).
 
@@ -90,7 +93,7 @@ public class AppIntegrationConcurrentTest {
     }
 
     @RepeatedTest(10) @Order(2)
-    public void transaction__givenFixedAccountAmount__concurrentTransfersDrawFromAccountCorrectly()
+    public void transfer__givenFixedAccountAmount__concurrentTransfersDrawFromAccountCorrectly()
             throws ExecutionException, InterruptedException, UnsupportedEncodingException {
 
         // given - constructing the threadpool
@@ -139,5 +142,44 @@ public class AppIntegrationConcurrentTest {
         var expectedBeneficiaryBalance = beneficiaryBalanceBefore
                 .add(new BigDecimal(Integer.toString(degreeOfParallelism)));
         assertEquals(expectedBeneficiaryBalance, beneficiaryBalanceAfter);
+    }
+
+
+    @RepeatedTest(1) @Order(3) @Disabled
+    public void transferAndAccountUpdate__whenTransactionIsProcessed__UpdateFails()
+            throws ExecutionException, InterruptedException, UnsupportedEncodingException {
+        // given - constructing the threadpool
+        var degreeOfParallelism = Runtime.getRuntime().availableProcessors();
+        var executor = Executors.newFixedThreadPool(degreeOfParallelism * 2);
+        var responses = new ArrayList<Future<InputStream>>();
+
+        // when
+        for (int i = 0; i < degreeOfParallelism; i++){
+            var transferReqUrl = "/transfers";
+            var transferReqBody = "{\"benefactor\":" + 1 + ", \"beneficiary\":" + 2 + ", \"amount\":" + 1 + "}";
+
+            var updateReqUrl = "/accounts/1";
+            var updateReqBody = "{\"balance\":" + i + "}";
+
+            responses.add(executor.submit(() -> req.makeReq(transferReqUrl, "POST", transferReqBody).getResponseBodyStream()));
+            responses.add(executor.submit(() -> req.makeReq(updateReqUrl, "PUT", updateReqBody).getResponseBodyStream()));
+
+        }
+        executor.shutdown();
+
+        for (int i = 0; i < responses.size(); i++){
+            var is = responses.get(i).get();
+            var br = new BufferedReader(new InputStreamReader(is));
+            var s = br.lines().collect(Collectors.joining(""));
+            System.out.println(s);
+        }
+
+        System.out.println();
+        System.out.println(req.makeReq("/accounts/1", "GET").getResponseBodyJsonData());
+    }
+
+    @RepeatedTest(10) @Order(4) @Disabled
+    public void transferAndAccountUpdate__whenUpdateIsProcessed__transferFails(){
+
     }
 }

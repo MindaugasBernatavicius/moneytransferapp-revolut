@@ -3,6 +3,7 @@ package com.revolut.moneytransferapp.service;
 import com.revolut.moneytransferapp.model.Account;
 import com.revolut.moneytransferapp.repository.AccountRepository;
 import com.revolut.moneytransferapp.repository.TransferRepository;
+import com.revolut.moneytransferapp.repository.repositoryexceptions.OptimisticLockException;
 import com.revolut.moneytransferapp.service.serviceexception.AccountNotFoundException;
 import com.revolut.moneytransferapp.service.serviceexception.InvalidTransferException;
 import org.junit.jupiter.api.BeforeEach;
@@ -106,7 +107,7 @@ public class AccountServiceTest {
 
     @Test
     public void updateAccount__givenExistingAccountId__updatesAccCorrectly()
-            throws AccountNotFoundException {
+            throws AccountNotFoundException, OptimisticLockException {
         // given
         var accId = 1; BigDecimal balance = new BigDecimal("1");
         var accounts =  new ArrayList<Account>(){{
