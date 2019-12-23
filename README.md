@@ -1,4 +1,4 @@
-# Money Transfer Application for Revolut Java Backend Engineer possition
+# Money Transfer Application for Revolut
 
 ## Explicit requirements
 1. Java / Kotlin can be used as an implementation language.
