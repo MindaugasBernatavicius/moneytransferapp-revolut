@@ -69,19 +69,34 @@ Endpoints:
 | PUT  /api/v1/accounts/{accountId} | Change account |
 | GET  /api/v1/transfers            | Obtain all transfers |
 | GET  /api/v1/transfers/{id}       | Get transfer by id  |
-| POST /transfers <br>{ “from”: “1”, “to”: “2”, “amount”:”500.00”} | Transfer given amount of money from account to other
+| POST /transfers <br>{ "from": 1, "to":2, "amount":500.00 } | Transfer given amount of money from account to other
 
-
-
-
-
-
-
-
-
-
-General remarks
-- 
+## General remarks
+Optimistic locking and thread safety
+- I wanted to experiment and implement Optimistic Locking around primitive non-thread sage Java Collections. The rationale was that not adding a database layer would be an interesting challenge also it would comply to the requirement in the task "no heavy frameworks". I was able to immitate a condition where an entity having a version field was updated by another thread before it persisted by the first one using this implementation. So a simple version of optimistic locking is implemented.
+```
+    @Override
+    public void update(Account account) throws OptimisticLockException, AccountNotFoundException {
+        boolean found = false;
+        for (int i = 0; i < accounts.size(); i++){
+            var tempAccount = accounts.get(i);
+            var version = tempAccount.getVersion();
+            if(tempAccount.getId().equals(account.getId())){
+                found = true;
+                var accountToBePersisted = new Account(account.getId(), account.getBalance(), ++version);
+                // imitating database transaction w/ OCC
+                synchronized (this){
+                    if (accounts.get(i).getVersion().equals(tempAccount.getVersion()))
+                        accounts.set(i, accountToBePersisted);
+                    else throw new OptimisticLockException();
+                }
+            }
+        }
+        if(!found)  throw new AccountNotFoundException();
+    }
+ ```
+ - I did not however succeed in implementing transactions in pure Java (see section: "What is still lacking")
 
 What is still lacking
-- 
+- Logging
+- Transaction mechanism in the service layer for transfers does not handle all cases (when transfer to the second account fails due to OptimisticLockingException the transfer to the first account is not reverted leading to possible inconsistency).
