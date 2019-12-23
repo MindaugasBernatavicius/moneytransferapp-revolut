@@ -20,7 +20,7 @@
 
 ## Testing
 - `mvn surefire:test` - run unit tests
-- `mvn failsafe:integration-test` - run 
+- `mvn failsafe:integration-test` - run integration tests
 
 ## Implementation details
 
