@@ -73,7 +73,11 @@ Endpoints:
 
 ## General remarks
 Optimistic locking and thread safety
-- I wanted to experiment and implement Optimistic Locking around primitive non-thread sage Java Collections. The rationale was that not adding a database layer would be an interesting challenge also it would comply to the requirement in the task "no heavy frameworks". I was able to immitate a condition where an entity having a version field was updated by another thread before it persisted by the first one using this implementation. So a simple version of optimistic locking is implemented.
+- Account and transaction creation are sychronised using default java monitori locking at the service layer:
+```public synchronized void createTransfer(int benefactorId, int beneficiaryId, BigDecimal amount)```
+```public synchronized int createAccount()```
+- Sychronisation for account and transaction creation is tested by spawning a lot of threads - core_count * 3 to increase thread interleaving probability. Removing the `synchronized` keyword from the method signatures would show incorrect behavior (for example dublicated id fields for accounts).
+- Regarding optimistic locking: I wanted to experiment and implement Optimistic Locking around primitive non-thread-safe Java Collections. The rationale was that not adding a database layer would be an interesting challenge also it would comply to the requirement in the task "no heavy frameworks". I was able to immitate a condition where an entity having a version field was updated by another thread before it persisted by the first one using this implementation. So a simple version of optimistic locking is implemented.
 ```
     @Override
     public void update(Account account) throws OptimisticLockException, AccountNotFoundException {
@@ -95,7 +99,7 @@ Optimistic locking and thread safety
         if(!found)  throw new AccountNotFoundException();
     }
  ```
- - I did not however succeed in implementing transactions in pure Java (see section: "What is still lacking")
+ - I did not, however, succeed in implementing transactions in pure Java (see section: "What is still lacking"). So for example if account to is updated using account update (PUT /account) action while transfer is happening optimistic locking will reject the update, but the transfer transaction would not be fully reverted.
 
 What is still lacking
 - Logging
