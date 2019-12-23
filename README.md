@@ -15,8 +15,11 @@
 3. Please put your work on github or bitbucket.
 
 ## Launching
+- `mvn clean install`
+- `java -jar target/money-transfer-app-1.0-SNAPSHOT-jar-with-dependencies.jar`
 
 ## Testing
+- `
 
 ## Implementation details
 
@@ -25,7 +28,7 @@ The following tools were used:
 - Junit5 - test running tests mechanisms and assertions.
 - Gson - object serialization and deserialization from to JSON.
 - Slf4j-simple - logging provider w/ java.util.logging implementation.
-- Dependency injection was handled manually - no framework, bu Guice would have been the choice.
+- Dependency injection was handled manually - no framework, but Guice would have been the choice otherwise.
 - Data stored in-memory, primitive collections (explicit choice) - jOOQ or JDBI would have been the choice otherwise. 
 
 The following project structure was chosen:
