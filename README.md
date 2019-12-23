@@ -66,7 +66,7 @@ Endpoints:
 | GET  /api/v1/accounts             | Obtain all accounts |
 | GET  /api/v1/accounts/{accountId} | Get account by id   |
 | POST /api/v1/accounts             | Create a new empty account |
-| PUT  /api/v1/accounts/{accountId} | Change account |
+| PUT  /api/v1/accounts/{accountId}<br> {"balance": 55} | Change account |
 | GET  /api/v1/transfers            | Obtain all transfers |
 | GET  /api/v1/transfers/{id}       | Get transfer by id  |
 | POST /transfers <br>{ "from": 1, "to":2, "amount":500.00 } | Transfer given amount of money from account to other
