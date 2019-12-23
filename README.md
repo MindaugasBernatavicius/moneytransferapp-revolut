@@ -23,21 +23,19 @@ The following tools were used:
 
 The following project structure was chosen:
 ```
-├───src
-│   ├───itest
-│   │   ├───java      <-- integration functional tests and integration concurrency tests
-│   │   └───resources <-- test resources
-│   ├───main
-│   │   └───moneytransferapp
-│   │   │         ├───controller
-│   │   │         ├───model
-│   │   │         ├───repository
-│   │   │         └───service
-│   │   └───resources
-│   └───test
-│       └───moneytransferapp
-│       │               ├───repository
-│       │               └───service
-│       └───resources
-
+src
+├───itest
+│   ├───moneytransferapp  <-- integration functional tests and integration concurrency tests
+│   └───resources         <-- integration test resources
+├───main
+│   └───moneytransferapp
+│   │         ├───controller  <-- request handling responsibilies (request validation, json (de)serialization, response codes).
+│   │         ├───model       <-- domain entities (account, transfer, user, etc.).
+│   │         ├───repository  <-- data handling layer for (in-memory) persistence and OCC.
+│   │         ├───service     <-- bussines logic (bussines logic validation and implementation using the underlying repositories).
+|   |         └─────App.java  <-- initial loading and configuration of Spark.
+│   └───resources
+└───test
+    └───moneytransferapp  <-- functional unit tests and (where appropriate) concurrency tests
+    └───resources         <-- unit test resources (logging configuration for tests)
 ```
